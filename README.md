@@ -1,7 +1,7 @@
 # Analyzing-Music-Popularity
 
-Creators: Angela Pham, Nikki Poentis, Julian Lange
-Class: MGSC 310
+Creators: Angela Pham, Nikki Poentis, Julian Lange  
+Class: MGSC 310  
 Assignment: Final Project
 
 ## Description
