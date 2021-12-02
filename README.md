@@ -11,3 +11,5 @@ Alongside the accessibility of music, there was a rise to music data accessibili
 
 Since it would be in the best interest of a record company to consistently produce popular songs, being able to use a song’s audio features to predict if it will be a hit or not will aid in making managerial decisions regarding which songs to produce.  
 
+## Additional Datasets
+The original dataset spotify_tracks was too large to upload to GitHub. Please use the following link to download the dataset:  https://www.kaggle.com/saurabhshahane/spotgen-music-dataset 
