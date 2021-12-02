@@ -1,0 +1,251 @@
+---
+title: "MGSC 310 Final Project - Question 1"
+author: "Angela Pham"
+subtitle: 
+output:
+  html_document:
+    df_print: paged
+  html_notebook: default
+---
+
+```{r setup, include = FALSE}
+# Please leave this code chunk as is. It makes some slight formatting changes to alter the output to be more aesthetically pleasing. 
+library(knitr)
+
+# Change the number in set seed to your own favorite number.
+set.seed(1818)
+options(width = 70)
+options(scipen = 99)
+
+# This sets text outputted in code chunks to small.
+opts_chunk$set(tidy.opts = list(width.wrap = 50),tidy = TRUE, size = "vsmall")  
+opts_chunk$set(message = FALSE,                                          
+               warning = FALSE,
+               # "Caching" stores objects in code chunks and only rewrites if you change things
+               cache = FALSE,                               
+               # Automatically downloads dependency files
+               autodep = TRUE,
+               cache.comments = FALSE,
+               collapse = TRUE,
+               # Change fig.width and fig.height to change the code height and width by default
+               fig.width = 5.5,  
+               fig.height = 4.5,
+               fig.align ='center')
+```
+
+```{r setup-2}
+# Always print this out before your assignment
+sessionInfo()
+getwd()
+```
+
+```{r setup-3}
+# Load all your libraries in this chunk 
+library('tidyverse')
+library('dplyr')
+library('ggplot2')
+library('forcats')
+library('rsample')
+library('glmnet')
+library('glmnetUtils')
+# NOTE: Do not run install.packages() inside a code chunk. Install them in the console outside of a code chunk. 
+```
+
+# Question 1: How can audio features help predict the popularity score of a track? 
+
+### Load Dataset
+```{r}
+tracks <- read.csv(here::here("spotify_dataset", "spotify_tracks.csv"))
+```
+
+### Clean Dataset & Summary Statistics
+The follwing link details each of the features in the 'tracks' dataset: https://developer.spotify.com/documentation/web-api/reference/#/operations/get-several-tracks)
+
+```{r}
+tracks %>% glimpse()
+```
+
+Below is a summary of the relevant features that will be used for this question. This includes genral information about a track, popularity, and its audio features:  
+  -  id: ID of th track, as identified by Spotify  
+  -  name: Name of track  
+  -  href: Link to Spotify API for complete information about a track  
+  -  uri: Unique identifier to access track on Spotify  
+  -  artists_id: List of artists IDs for a track  
+  -  album_id: Album ID of the album the track is a part of  
+  -  duration_ms: Length of track  
+  -  popularity: Popularity score for a track based on Spotify algorithms (Spotify indicates that it is largely based on number of plays.)  
+  -  acousticness: Confidence measure from 0.0 to 1.0 of whether the track is acoustic  
+  -  danceability: How suitable a track is for dancing based on a combination of musical elements including tempo, rhythm stability, beat strength, and overall regularity  
+  -  energy: Measure from 0.0 to 1.0 and represents a perceptual measure of intensity and activity  
+  -  instrumentalness: Predicts whether a track contains no vocals  
+  -  key: Key the track is in. Integers map to pitches using standard Pitch Class notation  
+  -  liveness: Detects the presence of an audience in the recording  
+  -  loudness: Quality of a sound that is the primary psychological correlate of physical strength (amplitude), measured in decibels (dB)  
+  -  mode: Modality (major or minor) of a track  
+  -  speechiness: Presence of spoken words in a track  
+  -  tempo: Speed or pace of a given piece in beats per minute (BPM)  
+  -  time_signature: Notational convention to specify how many beats are in each bar (or measure)  
+  -  valence: Musical positiveness conveyed by a track  
+  
+* Note that the feature 'X' is just an counter for each track in the data set. There are 101,939 tracks in this dataset.
+* The following link describe the audio features more in depth: https://developer.spotify.com/documentation/web-api/reference/#/operations/get-audio-features
+
+```{r}
+tracks_clean <- na.omit(tracks) # Omit any tracks with an na value in any column
+
+tracks_clean <- tracks[, c("id", "name", "href", "uri", "artists_id", "album_id", "duration_ms", "popularity", "acousticness", "danceability", "energy", "instrumentalness", "key", "liveness", "loudness", "mode", "speechiness", "tempo", "time_signature", "valence")]
+
+tracks_clean %>% glimpse()
+
+summary(tracks_clean)
+```
+
+```{r}
+tracks_audio_features <- tracks_clean[, c("popularity", "acousticness", "danceability", "energy", "instrumentalness", "key", "liveness", "loudness", "mode", "speechiness", "tempo", "time_signature", "valence")]
+corr_plot <- round(cor(tracks_audio_features), 2)
+print(corr_plot)
+```
+
+Below is a histogram showing the spread of the 'popularity' variable. From the plot below, we can see that the 'popularity' variable is normally distributed from 0 - 100, with 100 indicating most popular. The 'popularity' variable is not ordered by rank. Spotify indicates it largely based on number of plays, but includes other factors as well.
+
+```{r}
+ggplot(tracks_clean, aes(popularity)) + geom_histogram(binwidth = 5) + theme_minimal()
+```
+
+The following plots show relationships between the popularity scores and each audio feature. The plots are not linear; however, some plots, like danceability and energy clearly show that higher values in those audio features indicate more popular music, as indicated by darker points in the top right hand corner.
+
+```{r}
+ggplot(tracks_clean, aes(acousticness, popularity)) + geom_point(alpha = 0.05, color = "#5F4690") + geom_smooth() + theme_minimal() 
+ggplot(tracks_clean, aes(danceability, popularity)) + geom_point(alpha = 0.05, color = "#1D6996") + geom_smooth() + theme_minimal()
+ggplot(tracks_clean, aes(energy, popularity)) + geom_point(alpha = 0.05, color = "#38A6A5") + geom_smooth() + theme_minimal()
+ggplot(tracks_clean, aes(instrumentalness, popularity)) + geom_point(alpha = 0.05, color = "#0F8554") + geom_smooth() + theme_minimal()
+ggplot(tracks_clean, aes(key, popularity)) + geom_point(alpha = 0.05, color = "#73AF48") + geom_smooth() + theme_minimal()
+ggplot(tracks_clean, aes(liveness, popularity)) + geom_point(alpha = 0.05, color = "#EDAD08") + geom_smooth() + theme_minimal()
+ggplot(tracks_clean, aes(loudness, popularity)) + geom_point(alpha = 0.05, color = "#E17C05") + geom_smooth() + theme_minimal()
+ggplot(tracks_clean, aes(mode, popularity)) + geom_point(alpha = 0.05, color = "#6F4070") + geom_smooth() + theme_minimal()
+ggplot(tracks_clean, aes(speechiness, popularity)) + geom_point(alpha = 0.05, color = "#94346E") + geom_smooth() + theme_minimal()
+ggplot(tracks_clean, aes(tempo, popularity)) + geom_point(alpha = 0.05, color = "#CC503E") + geom_smooth() + theme_minimal()
+ggplot(tracks_clean, aes(time_signature, popularity)) + geom_point(alpha = 0.05, color = "#994E95") + geom_smooth() +theme_minimal()
+ggplot(tracks_clean, aes(valence, popularity)) + geom_point(alpha = 0.05, color = "#1DB954FF") + geom_smooth() +theme_minimal()
+```
+
+### Linear Regression Model
+```{r}
+# Split data
+tracks_split <- initial_split(tracks_clean, prop = 0.70) # 70%-30% train-test split
+tracks_train <- training(tracks_split)
+tracks_test <- testing(tracks_split)
+```
+
+```{r}
+# Create model
+lr_simple <- lm(popularity ~ acousticness + danceability + energy + instrumentalness + key + liveness + loudness + mode + 
+                speechiness + tempo + time_signature + valence, 
+                data = tracks_train)
+
+# Summarize model
+summary(lr_simple)
+```
+
+```{r}
+preds_train_lr_simple <- predict(lr_simple, newdata = tracks_train)
+preds_test_lr_simple <- predict(lr_simple, newdata = tracks_test)
+```
+
+```{r}
+results <- data.frame(
+              `preds` = c(preds_test_lr_simple, preds_train_lr_simple),
+              `true` = c(tracks_test$popularity, tracks_train$popularity),
+              `type` = c(rep("Test", nrow(tracks_test)), rep("Train", nrow(tracks_train))))
+
+results
+
+ggplot(results, aes(true, preds)) + geom_point(alpha = 0.05) + 
+  facet_wrap(. ~ type) + 
+  theme_minimal() + 
+  labs(x = "True Track's Popularity", 
+       y = "Predicted Tracks's Popularity")
+```
+
+```{r}
+get_rmse <- function(true_values, predictions) {
+  sqrt(mean((true_values - predictions) ^ 2))
+}
+
+get_mae <- function(true_values, predictions){
+  mean(abs(true_values - predictions))
+}
+```
+
+```{r}
+get_rmse(tracks_train$popularity, preds_train_lr_simple)
+get_rmse(tracks_test$popularity, preds_test_lr_simple)
+```
+
+```{r}
+get_mae(tracks_train$popularity, preds_train_lr_simple)
+get_mae(tracks_test$popularity, preds_test_lr_simple)
+```
+
+### Ridge Model
+```{r}
+ridge_fit <- cv.glmnet(popularity ~ acousticness + danceability + energy + instrumentalness + key + liveness 
+                       + loudness + mode + speechiness + tempo + time_signature + valence,
+                       data = tracks_train, alpha = 0)
+print(ridge_fit)
+
+plot(ridge_fit)
+
+coef(ridge_fit, s = "lambda.min")
+```
+
+### Lasso Model
+```{r}
+lasso_fit <- cv.glmnet(popularity ~ acousticness + danceability + energy + instrumentalness + key + liveness 
+                       + loudness + mode + speechiness + tempo + time_signature + valence,
+                       data = tracks_train, alpha = 1)
+
+print(lasso_fit)
+
+plot(lasso_fit)
+
+coef(lasso_fit, s = "lambda.min")
+```
+
+### ElasticNet Model
+```{r}
+enet_mod <- cva.glmnet(popularity ~ acousticness + danceability + energy + instrumentalness + key + liveness 
+                       + loudness + mode + speechiness + tempo + time_signature + valence, 
+                       data = tracks_train, 
+                       alpha = seq(0, 1, by = 0.05))
+
+print(enet_mod)
+
+minlossplot(enet_mod, cv.type = "min")
+```
+
+```{r}
+# Function to find the best alpha
+get_alpha <- function(fit) {
+  alpha <- fit$alpha
+  error <- sapply(fit$modlist, 
+                  function(mod) {min(mod$cvm)})
+  alpha[which.min(error)]
+}
+```
+
+```{r}
+# Extract the best alpha value
+best_alpha <- get_alpha(enet_mod)
+print(best_alpha)
+
+# Create best Elastic Net model
+best_enet_mod <- cva.glmnet(popularity ~ acousticness + danceability + energy + instrumentalness + key + liveness 
+                       + loudness + mode + speechiness + tempo + time_signature + valence, 
+                       data = tracks_train, 
+                       alpha = best_alpha)
+
+print(best_enet_mod)
+```
+
+

@@ -1,0 +1,264 @@
+---
+title: "MGSC 310 Final Project - Stat Summary"
+author: "Angela Pham, Nikki Poentis, Julian Lange"
+subtitle: 
+output:
+  html_document:
+    df_print: paged
+  html_notebook: default
+---
+
+```{r setup, include = FALSE}
+# Please leave this code chunk as is. It makes some slight formatting changes to alter the output to be more aesthetically pleasing. 
+
+library(knitr)
+
+# Change the number in set seed to your own favorite number.
+set.seed(1818)
+options(width = 70)
+options(scipen = 99)
+
+# This sets text outputted in code chunks to small.
+opts_chunk$set(tidy.opts = list(width.wrap = 50),tidy = TRUE, size = "vsmall")  
+opts_chunk$set(message = FALSE,                                          
+               warning = FALSE,
+               # "Caching" stores objects in code chunks and only rewrites if you change things
+               cache = FALSE,                               
+               # Automatically downloads dependency files
+               autodep = TRUE,
+               cache.comments = FALSE,
+               collapse = TRUE,
+               # Change fig.width and fig.height to change the code height and width by default
+               fig.width = 5.5,  
+               fig.height = 4.5,
+               fig.align ='center')
+```
+
+```{r setup-2}
+# Always print this out before your assignment
+sessionInfo()
+getwd()
+```
+
+```{r setup-3}
+# Load all your libraries in this chunk 
+library('tidyverse')
+library('dplyr')
+library('ggplot2')
+library('ggridges')
+# NOTE: Do not run install.packages() inside a code chunk. Install them in the console outside of a code chunk. 
+```
+
+```{r}
+tracks <- read.csv(here::here("spotify_dataset", "spotify_tracks.csv"))
+```
+
+2. Description of Features 
+
+The follwing link details each of the features in the 'tracks' dataset: https://developer.spotify.com/documentation/web-api/reference/#/operations/get-several-tracks)
+
+```{r}
+tracks %>% glimpse()
+```
+
+Below is a summary of the relevant features that will be used for this question. This includes genral information about a track, popularity, and its audio features:  
+  -  id: ID of th track, as identified by Spotify  
+  -  name: Name of track  
+  -  href: Link to Spotify API for complete information about a track  
+  -  uri: Unique identifier to access track on Spotify  
+  -  artists_id: List of artists IDs for a track  
+  -  album_id: Album ID of the album the track is a part of  
+  -  duration_ms: Length of track  
+  -  popularity: Popularity score for a track based on Spotify algorithms (Spotify indicates that it is largely based on number of plays.)  
+  -  acousticness: Confidence measure from 0.0 to 1.0 of whether the track is acoustic  
+  -  danceability: How suitable a track is for dancing based on a combination of musical elements including tempo, rhythm stability, beat strength, and overall regularity  
+  -  energy: Measure from 0.0 to 1.0 and represents a perceptual measure of intensity and activity  
+  -  instrumentalness: Predicts whether a track contains no vocals  
+  -  key: Key the track is in. Integers map to pitches using standard Pitch Class notation  
+  -  liveness: Detects the presence of an audience in the recording  
+  -  loudness: Quality of a sound that is the primary psychological correlate of physical strength (amplitude), measured in decibels (dB)  
+  -  mode: Modality (major or minor) of a track  
+  -  speechiness: Presence of spoken words in a track  
+  -  tempo: Speed or pace of a given piece in beats per minute (BPM)  
+  -  time_signature: Notational convention to specify how many beats are in each bar (or measure)  
+  -  valence: Musical positiveness conveyed by a track  
+  
+* Note that the feature 'X' is just an counter for each track in the data set. There are 101,939 tracks in this dataset.
+* The following link describe the audio features more in depth: https://developer.spotify.com/documentation/web-api/reference/#/operations/get-audio-features
+
+```{r}
+tracks_clean <- na.omit(tracks) # Omit any tracks with an na value in any column
+
+tracks_clean <- tracks[, c("id", "name", "href", "uri", "artists_id", "album_id", "duration_ms", "popularity", "acousticness", "danceability", "energy", "instrumentalness", "key", "liveness", "loudness", "mode", "speechiness", "tempo", "time_signature", "valence")]
+
+tracks_clean %>% glimpse()
+```
+
+```{r}
+summary(tracks_clean)
+```
+
+Below is a histogram showing the spread of the 'popularity' variable. From the plot below, we can see that the 'popularity' variable is normally distributed from 0 - 100, with 100 indicating most popular. The 'popularity' varaible is not ordered by rank. Spotify indicates it largely based on number of plays, but includes other factors as well.
+```{r}
+ggplot(tracks_clean, aes(tracks_clean$popularity)) + geom_histogram(binwidth = 5) +
+      theme_minimal()
+```
+
+The following plots show relationships between the popularity scores and each audio feature. The plots are not linear; however, some plots, like danceability and energy clearly show that higher values in those audio features indicate more popular music, as indicated by darker points in the top right hand corner.
+```{r}
+ggplot(tracks_clean, aes(acousticness, popularity)) + geom_point(alpha = 0.05) + 
+      geom_smooth() +
+      theme_minimal()
+
+ggplot(tracks_clean, aes(danceability, popularity)) + geom_point(alpha = 0.05) + 
+      geom_smooth() +
+      theme_minimal()
+
+ggplot(tracks_clean, aes(energy, popularity)) + geom_point(alpha = 0.05) + 
+      geom_smooth() +
+      theme_minimal()
+
+ggplot(tracks_clean, aes(instrumentalness, popularity)) + geom_point(alpha = 0.05) + 
+      geom_smooth() +
+      theme_minimal()
+
+ggplot(tracks_clean, aes(key, popularity)) + geom_point(alpha = 0.05) + 
+      geom_smooth() +
+      theme_minimal()
+
+ggplot(tracks_clean, aes(liveness, popularity)) + geom_point(alpha = 0.05) + 
+      geom_smooth() +
+      theme_minimal()
+
+ggplot(tracks_clean, aes(loudness, popularity)) + geom_point(alpha = 0.05) + 
+      geom_smooth() +
+      theme_minimal()
+
+ggplot(tracks_clean, aes(mode, popularity)) + geom_point(alpha = 0.05) + 
+      geom_smooth() +
+      theme_minimal()
+
+ggplot(tracks_clean, aes(speechiness, popularity)) + geom_point(alpha = 0.05) + 
+      geom_smooth() +
+      theme_minimal()
+
+ggplot(tracks_clean, aes(tempo, popularity)) + geom_point(alpha = 0.05) + 
+      geom_smooth() +
+      theme_minimal()
+
+ggplot(tracks_clean, aes(time_signature, popularity)) + geom_point(alpha = 0.05) + 
+      geom_smooth() +
+      theme_minimal()
+
+ggplot(tracks_clean, aes(valence, popularity)) + geom_point(alpha = 0.05) + 
+      geom_smooth() +
+      theme_minimal()
+```
+
+The boxplot below shows a clearer picture of the distribution of the 'popularity' variable. Our group has decided that any scores above the 75th percentile will be considered a hit. The 75th percentile is at the popularity score of 52.00, as indicated by the next code chunk. 
+```{r}
+ggplot(tracks_clean, aes(popularity)) + geom_boxplot() +
+  theme_minimal()
+```
+
+```{r}
+percentile_75 <- quantile(tracks_clean$popularity, prob = 0.75)
+sprintf("75th Percentile = %i", as.numeric(percentile_75))
+```
+
+```{r}
+# Add binary 'hit' variable to 'tracks_clean' dataset
+tracks_hit <- tracks_clean %>% mutate(hit = ifelse(popularity > percentile_75, 1, 0) %>% factor(., levels = c("0","1")),)
+tracks_hit %>% glimpse()
+```
+
+The following plots show relationships between the popularity scores and each audio feature. Most of the boxplots for each audio feature look the same whether they are a hit or not, indicating they may not be the strongest audio features in determining popularity. However, the difference seen in the 'dancebility' and 'energy' box plots may indicate that they may be strong features in determing popularity.
+```{r}
+ggplot(tracks_hit, aes(x = hit, y = acousticness, fill = popularity)) + geom_boxplot() +
+  theme_minimal()
+
+ggplot(tracks_hit, aes(x = hit, y = danceability, fill = popularity)) + geom_boxplot() +
+  theme_minimal()
+
+ggplot(tracks_hit, aes(x = hit, y = energy, fill = popularity)) + geom_boxplot() +
+  theme_minimal()
+
+ggplot(tracks_hit, aes(x = hit, y = instrumentalness, fill = popularity)) + geom_boxplot() +
+  theme_minimal()
+
+ggplot(tracks_hit, aes(x = hit, y = key, fill = popularity)) + geom_boxplot() +
+  theme_minimal()
+
+ggplot(tracks_hit, aes(x = hit, y = liveness, fill = popularity)) + geom_boxplot() +
+  theme_minimal()
+
+ggplot(tracks_hit, aes(x = hit, y = loudness, fill = popularity)) + geom_boxplot() +
+  theme_minimal()
+
+ggplot(tracks_hit, aes(x = hit, y = mode, fill = popularity)) + geom_boxplot() +
+  theme_minimal()
+
+ggplot(tracks_hit, aes(x = hit, y = speechiness, fill = popularity)) + geom_boxplot() +
+  theme_minimal()
+
+ggplot(tracks_hit, aes(x = hit, y = tempo, fill = popularity)) + geom_boxplot() +
+  theme_minimal()
+
+ggplot(tracks_hit, aes(x = hit, y = time_signature, fill = popularity)) + geom_boxplot() +
+  theme_minimal()
+
+ggplot(tracks_hit, aes(x = hit, y = valence, fill = popularity)) + geom_boxplot() +
+  theme_minimal()
+```
+
+```{r}
+artist_genres <- read.csv(here::here("spotify_dataset", "artist_genres.csv"))
+```
+
+```{r}
+artist_genres_clean <- na.omit(artist_genres) # Omit any tracks with an na value in any column
+```
+
+```{r}
+artist_genres_clean %>% glimpse()
+```
+
+```{r}
+summary(artist_genres_clean)
+```
+
+The density ridges for the each audio features helps visualize how each genre sounds like. 
+```{r}
+ggplot(artist_genres_clean, aes(x = acousticness, y = Genre)) +
+  geom_density_ridges() +
+  theme_minimal()
+
+ggplot(artist_genres_clean, aes(x = danceability, y = Genre)) +
+  geom_density_ridges() +
+  theme_minimal()
+
+ggplot(artist_genres_clean, aes(x = energy, y = Genre)) +
+  geom_density_ridges() +
+  theme_minimal()
+
+ggplot(artist_genres_clean, aes(x = loudness, y = Genre)) +
+  geom_density_ridges() +
+  theme_minimal()
+
+ggplot(artist_genres_clean, aes(x = liveness, y = Genre)) +
+  geom_density_ridges() +
+  theme_minimal()
+
+ggplot(artist_genres_clean, aes(x = speechiness, y = Genre)) +
+  geom_density_ridges() +
+  theme_minimal()
+
+ggplot(artist_genres_clean, aes(x = tempo, y = Genre)) +
+  geom_density_ridges() +
+  theme_minimal()
+
+ggplot(artist_genres_clean, aes(x = valence, y = Genre)) +
+  geom_density_ridges() +
+  theme_minimal()
+```
+
